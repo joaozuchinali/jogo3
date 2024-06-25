@@ -59,6 +59,7 @@ public class GameController : MonoBehaviour
         if(vida <= 0)
         {
             SceneManager.LoadScene("GameOver");
+            vida = 3;
         }
     }
 
