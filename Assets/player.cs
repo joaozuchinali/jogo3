@@ -18,6 +18,7 @@ public class player : MonoBehaviour
     private bool moveLeft;
     private bool moveRight;
     private bool isJumping;
+    private bool isGrounded;
 
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
@@ -29,6 +30,29 @@ public class player : MonoBehaviour
     }
 
     void Update()
+    {
+        HandleInput();
+        HandleAnimation();
+    }
+
+    void FixedUpdate()
+    {
+        HandleMovement();
+    }
+
+    private void HandleInput()
+    {
+        if (moveLeft)
+        {
+            sr.flipX = true;
+        }
+        else if (moveRight)
+        {
+            sr.flipX = false;
+        }
+    }
+
+    private void HandleMovement()
     {
         if (moveLeft)
         {
@@ -43,17 +67,23 @@ public class player : MonoBehaviour
             rb.velocity = new Vector2(0, rb.velocity.y);
         }
 
-        if (isJumping)
+        if (isJumping && isGrounded)
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-            isJumping = false; // Reset jump to prevent continuous jumping
+            isJumping = false;
+            isGrounded = false;
         }
+    }
+
+    private void HandleAnimation()
+    {
+        animator.SetBool("correndo", moveLeft || moveRight);
+        animator.SetBool("pulando", !isGrounded);
     }
 
     public void OnMoveLeftDown()
     {
         moveLeft = true;
-        sr.flipX = true;
     }
 
     public void OnMoveLeftUp()
@@ -64,7 +94,6 @@ public class player : MonoBehaviour
     public void OnMoveRightDown()
     {
         moveRight = true;
-        sr.flipX = false;
     }
 
     public void OnMoveRightUp()
@@ -74,14 +103,17 @@ public class player : MonoBehaviour
 
     public void OnJump()
     {
-        isJumping = true;
+        if (isGrounded)
+        {
+            isJumping = true;
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "Ground")
+        if (collision.gameObject.tag == "Ground")
         {
-            animator.SetBool("pulando", false);
+            isGrounded = true;
         }
     }
 
@@ -89,19 +121,21 @@ public class player : MonoBehaviour
     {
         if (collision.gameObject.tag == "Ground")
         {
-            animator.SetBool("pulando", true);
+            isGrounded = false;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if(collision.gameObject.tag == "fruta")
+        if (collision.gameObject.tag == "fruta")
         {
-            if(collision.gameObject.GetComponent<Animator>().GetBool("coletando") == true) {
+            if (collision.gameObject.GetComponent<Animator>().GetBool("coletando") == true)
+            {
                 return;
             }
 
             collision.gameObject.GetComponent<Animator>().SetBool("coletando", true);
+            collision.gameObject.GetComponent<Collider2D>().enabled = false; // Desativa o Collider2D
             Destroy(collision.gameObject, 1f);
             GameController.setPontos(1);
         }
@@ -111,7 +145,8 @@ public class player : MonoBehaviour
             morre();
         }
 
-        if(collision.gameObject.tag == "end") {
+        if (collision.gameObject.tag == "end")
+        {
             endPannel.SetActive(true);
             animator.SetBool("correndo", false);
             animator.SetBool("pulando", false);
